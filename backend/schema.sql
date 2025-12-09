@@ -184,7 +184,7 @@ CREATE INDEX idx_materials_part_name ON materials(part_name);
 CREATE INDEX idx_materials_supplier ON materials(supplier);
 
 -- ===============================================
--- TRIGGERS
+-- TRIGGERS (Fixed - no DELIMITER needed)
 -- ===============================================
 
 -- Trigger for adding new materials
@@ -208,7 +208,6 @@ BEGIN
             'part_name', NEW.part_name,
             'length', NEW.length,
             'width', NEW.width,
-            'height', NEW.height,
             'quantity', NEW.quantity,
             'supplier', NEW.supplier
         ),
@@ -240,7 +239,6 @@ BEGIN
                 'part_name', OLD.part_name,
                 'length', OLD.length,
                 'width', OLD.width,
-                'height', OLD.height,
                 'quantity', OLD.quantity,
                 'supplier', OLD.supplier
             ),
@@ -249,7 +247,6 @@ BEGIN
                 'part_name', NEW.part_name,
                 'length', NEW.length,
                 'width', NEW.width,
-                'height', NEW.height,
                 'quantity', NEW.quantity,
                 'supplier', NEW.supplier
             )
@@ -281,7 +278,6 @@ BEGIN
             'part_name', OLD.part_name,
             'length', OLD.length,
             'width', OLD.width,
-            'height', OLD.height,
             'quantity', OLD.quantity,
             'supplier', OLD.supplier
         ),
@@ -326,7 +322,7 @@ ORDER BY
     END,
     mr.request_date;
 
--- View for material inventory with categories
+-- View for material inventory with categories (FIXED - removed height column)
 CREATE OR REPLACE VIEW material_inventory_view AS
 SELECT 
     m.id,
@@ -334,7 +330,6 @@ SELECT
     m.part_name,
     m.length,
     m.width,
-    m.height,
     m.quantity,
     m.supplier,
     m.updated_by,
@@ -384,7 +379,7 @@ CREATE TABLE IF NOT EXISTS batch_groups (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES batch_groups_counter(id),
     FOREIGN KEY (batch_id) REFERENCES batches(id),
-    UNIQUE KEY (batch_id) -- Each batch can only be in one group
+    UNIQUE KEY (batch_id)
 );
 
 -- Create activity_logs table for tracking user actions
@@ -397,6 +392,130 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Create machines table
+CREATE TABLE IF NOT EXISTS machines (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ten_may_dap VARCHAR(100) NOT NULL,
+    status ENUM('running', 'stopping') DEFAULT NULL
+);
+
+-- Create molds table
+CREATE TABLE IF NOT EXISTS molds (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ma_khuon VARCHAR(100) NOT NULL,
+    so_luong INT NOT NULL DEFAULT 0,
+    machine_id INT,
+    material_id INT,
+    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL,
+    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL
+);
+
+-- Create machine_stop_logs table
+CREATE TABLE IF NOT EXISTS machine_stop_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    machine_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    stop_time VARCHAR(50),
+    stop_date VARCHAR(50),
+    user_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Create loHangHoa table (production batches)
+CREATE TABLE IF NOT EXISTS loHangHoa (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    material_id INT,
+    machine_id INT,
+    mold_id INT,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('running', 'stopping') DEFAULT 'running',
+    expected_output INT,
+    actual_output INT DEFAULT 0,
+    start_date DATETIME,
+    end_date DATETIME,
+    is_hidden TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL,
+    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL,
+    FOREIGN KEY (mold_id) REFERENCES molds(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- Assembly components table
+CREATE TABLE IF NOT EXISTS assembly_components (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    group_id INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    completion_time DATETIME,
+    product_quantity INT NOT NULL,
+    pic_id INT NOT NULL,
+    product_name VARCHAR(255),
+    product_code VARCHAR(100),
+    notes TEXT,
+    status ENUM('processing', 'completed', 'plating') DEFAULT 'processing',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES batch_groups_counter(id) ON DELETE CASCADE,
+    FOREIGN KEY (pic_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Plating table
+CREATE TABLE IF NOT EXISTS plating (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    assembly_id INT NOT NULL,
+    product_name VARCHAR(255),
+    product_code VARCHAR(100),
+    notes TEXT,
+    plating_start_time DATETIME NOT NULL,
+    plating_end_time DATETIME,
+    status ENUM('pending', 'processing', 'completed', 'received') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assembly_id) REFERENCES assembly_components(id) ON DELETE CASCADE
+);
+
+-- Finished Products table
+CREATE TABLE IF NOT EXISTS finished_products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    plating_id INT NOT NULL,
+    assembly_id INT NOT NULL,
+    group_id INT NOT NULL,
+    product_name VARCHAR(100) NOT NULL,
+    product_code VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL,
+    defect_count INT NOT NULL DEFAULT 0 COMMENT 'Number of defective products in this batch',
+    completion_date DATETIME NOT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'in_stock',
+    qr_code_data JSON,
+    FOREIGN KEY (plating_id) REFERENCES plating(id),
+    FOREIGN KEY (assembly_id) REFERENCES assembly_components(id),
+    FOREIGN KEY (group_id) REFERENCES batch_groups_counter(id),
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT chk_defect_count_range CHECK (defect_count >= 0 AND defect_count <= quantity)
+);
+
+-- Create quality_checks table to track inspection history
+CREATE TABLE IF NOT EXISTS quality_checks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    status ENUM('OK', 'NG') NOT NULL,
+    defect_count INT NOT NULL DEFAULT 0,
+    defect_type VARCHAR(100),
+    repair_recommendation TEXT,
+    checked_by INT NOT NULL,
+    check_date DATETIME NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES finished_products(id) ON DELETE CASCADE,
+    FOREIGN KEY (checked_by) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+-- Create indexes
+CREATE INDEX idx_finished_products_defect_count ON finished_products(defect_count);
+CREATE INDEX idx_quality_checks_product ON quality_checks(product_id);
 
 -- ===============================================
 -- INITIAL DATA
@@ -437,7 +556,6 @@ INSERT INTO material_tags (tag_name, color, created_by) VALUES
 ('Refrigerated', '#0dcaf0', 1),
 ('High Priority', '#fd7e14', 1);
 
-
 -- Insert sample data for materials
 INSERT INTO materials (packet_no, part_name, material_code, length, width, material_type, quantity, supplier, updated_by, last_updated) VALUES
 (1, 'xxxxxxxxxxxxxxxxxxxxxxxxx','NVX', 3000, 3455, 'Steel', 10, 'SHENZEN', 'Khai', '05/03/2025'),
@@ -447,23 +565,13 @@ INSERT INTO materials (packet_no, part_name, material_code, length, width, mater
 (2, 'GC70/71MF0234A0','C2680', 1, 19, 'Copper', 388, 'KMW', 'Khai', '05/03/2025'),
 (3, '1010007010A (BLOCK)','AL1100', 3000, 345, 'Steel', 98000, 'NCCV', 'Khai', '05/03/2025');
 
--- Add some sample category mappings
+-- Add sample category mappings
 INSERT INTO material_category_mapping (material_id, category_id) VALUES
-(1, 2), -- First material is in Machinery Parts
-(2, 2), -- Second material is in Machinery Parts
-(3, 2), -- Third material is in Machinery Parts
-(4, 2), -- Fourth material is in Machinery Parts
-(5, 2), -- Fifth material is in Machinery Parts
-(6, 2); -- Sixth material is in Machinery Parts
+(1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2);
 
--- Add some sample tag mappings
+-- Add sample tag mappings
 INSERT INTO material_tag_mapping (material_id, tag_id) VALUES
-(1, 2), -- First material is Heavy
-(2, 2), -- Second material is Heavy
-(3, 2), -- Third material is Heavy
-(4, 2), -- Fourth material is Heavy
-(5, 2), -- Fifth material is Heavy
-(6, 2); -- Sixth material is Heavy
+(1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2);
 
 -- Sample requests
 INSERT INTO material_requests (request_type, material_id, request_data, request_reason, urgency, user_id, status)
@@ -473,6 +581,7 @@ VALUES
 ('add', NULL, '{"packetNo": 2, "partName": "New Component", "length": 500, "width": 300,"materialCode": "ZYA", "materialType": "steel", "quantity": 25, "supplier": "Local Supplier"}',
  'Required for new product line', 'medium', 4, 'pending'),
 ('delete', 3, '{}', 'No longer needed in production', 'low', 4, 'pending');
+
 -- Insert sample data for batches
 INSERT INTO batches (part_name, machine_name, mold_code, quantity, warehouse_entry_time, status, created_by) VALUES
 ('ZHG513-301', 'A7-45T', 'ZHG513-302-V1', 10, '19:00:10 05/03/2025', NULL, 1),
@@ -481,61 +590,13 @@ INSERT INTO batches (part_name, machine_name, mold_code, quantity, warehouse_ent
 ('C2022', 'ZHG513-304', 'ZHG513-302-V4', 40, '19:00:10 05/03/2025', NULL, 1),
 ('C2028', 'ZHG513-305', 'ZHG513-302-V4', 10, '19:00:10 05/03/2025', NULL, 1);
 
-CREATE TABLE IF NOT EXISTS machines (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_may_dap VARCHAR(100) NOT NULL
-);
-
--- Create molds table
-CREATE TABLE IF NOT EXISTS molds (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_khuon VARCHAR(100) NOT NULL,
-    so_luong INT NOT NULL DEFAULT 0,
-    machine_id INT,
-    material_id INT,
-    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL,
-    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL
-);
-
--- Create machine_stop_logs table
-CREATE TABLE IF NOT EXISTS machine_stop_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    machine_id INT NOT NULL,
-    reason TEXT NOT NULL,
-    stop_time VARCHAR(50),
-    stop_date VARCHAR(50),
-    user_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Create loHoangHoa table (renamed from batches)
-CREATE TABLE IF NOT EXISTS loHangHoa (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    material_id INT,
-    machine_id INT,
-    mold_id INT,
-    created_by INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('running', 'stopping') DEFAULT 'running',
-    expected_output INT,
-    actual_output INT DEFAULT 0,
-    start_date DATETIME,
-    end_date DATETIME,
-    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL,
-    FOREIGN KEY (machine_id) REFERENCES machines(id) ON DELETE SET NULL,
-    FOREIGN KEY (mold_id) REFERENCES molds(id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by) REFERENCES users(id)
-);
-ALTER TABLE loHangHoa ADD COLUMN is_hidden TINYINT(1) DEFAULT 0;
 -- Insert sample data for machines
-INSERT INTO machines (ten_may_dap) VALUES
-('A7-45T'),
-('ZHG513-302'),
-('ZHG513-303'),
-('ZHG513-304'),
-('Day la may test');
+INSERT INTO machines (ten_may_dap, status) VALUES
+('A7-45T', NULL),
+('ZHG513-302', NULL),
+('ZHG513-303', NULL),
+('ZHG513-304', NULL),
+('Day la may test', NULL);
 
 -- Insert sample data for molds
 INSERT INTO molds (ma_khuon, so_luong, machine_id) VALUES
@@ -545,107 +606,10 @@ INSERT INTO molds (ma_khuon, so_luong, machine_id) VALUES
 ('C2022', 40, 4),
 ('C2028', 10, 5);
 
--- Insert sample data for loHoangHoa (production batches)
+-- Insert sample data for loHangHoa (production batches)
 INSERT INTO loHangHoa (material_id, machine_id, mold_id, created_by, status, expected_output, start_date) VALUES
 (1, 2, 2, 1, 'running', 500, NOW()),
 (2, 4, 4, 1, 'running', 250, NOW()),
 (3, 1, 1, 2, 'running', 1000, '2025-04-01 08:00:00'),
 (4, 3, 3, 2, 'running', 750, '2025-03-01 08:00:00'),
 (5, 5, 5, 1, 'running', 300, '2025-05-01 08:00:00');
-
-ALTER TABLE machines ADD COLUMN status ENUM('running', 'stopping') DEFAULT NULL;
-
-
--- Assembly components table
-CREATE TABLE IF NOT EXISTS assembly_components (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    group_id INT NOT NULL,
-    start_time DATETIME NOT NULL,
-    completion_time DATETIME,
-    product_quantity INT NOT NULL,
-    pic_id INT NOT NULL,
-    product_name VARCHAR(255),
-    product_code VARCHAR(100),
-    notes TEXT,
-    status ENUM('processing', 'completed', 'plating') DEFAULT 'processing',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (group_id) REFERENCES batch_groups_counter(id) ON DELETE CASCADE,
-    FOREIGN KEY (pic_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Plating table
-CREATE TABLE IF NOT EXISTS plating (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    assembly_id INT NOT NULL,
-    product_name VARCHAR(255),
-    product_code VARCHAR(100),
-    notes TEXT,
-    plating_start_time DATETIME NOT NULL,
-    plating_end_time DATETIME,
-    status ENUM('pending', 'processing', 'completed', 'received') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assembly_id) REFERENCES assembly_components(id) ON DELETE CASCADE
-);
-
--- IMPORTANT: Finished Products table must be created AFTER the plating table
--- since it references plating(id)
-CREATE TABLE IF NOT EXISTS finished_products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    plating_id INT NOT NULL,
-    assembly_id INT NOT NULL,
-    group_id INT NOT NULL,
-    product_name VARCHAR(100) NOT NULL,
-    product_code VARCHAR(50) NOT NULL,
-    quantity INT NOT NULL,
-    completion_date DATETIME NOT NULL,
-    created_by INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(50) DEFAULT 'in_stock',
-    qr_code_data JSON,
-    FOREIGN KEY (plating_id) REFERENCES plating(id),
-    FOREIGN KEY (assembly_id) REFERENCES assembly_components(id),
-    FOREIGN KEY (group_id) REFERENCES batch_groups_counter(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
-);
-
--- Add defect_count column to the finished_products table
-ALTER TABLE finished_products 
-ADD COLUMN defect_count INT NOT NULL DEFAULT 0;
-
--- Add a comment to the column for documentation
-ALTER TABLE finished_products
-MODIFY COLUMN defect_count INT NOT NULL DEFAULT 0 COMMENT 'Number of defective products in this batch';
-
--- Optional: Update existing records if needed (set defect_count based on status)
--- This will set defect_count to quantity for all products with 'defective' status
-UPDATE finished_products 
-SET defect_count = quantity 
-WHERE status = 'defective';
-
--- Optional: Create an index on defect_count if you plan to query by it often
-CREATE INDEX idx_finished_products_defect_count ON finished_products(defect_count);
-
--- Optional: Add a check constraint to ensure defect_count is not greater than quantity
--- Note: This requires MySQL 8.0.16 or higher
-ALTER TABLE finished_products
-ADD CONSTRAINT chk_defect_count_range 
-CHECK (defect_count >= 0 AND defect_count <= quantity);
-
--- Create quality_checks table to track inspection history
-CREATE TABLE IF NOT EXISTS quality_checks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  product_id INT NOT NULL,
-  status ENUM('OK', 'NG') NOT NULL,
-  defect_count INT NOT NULL DEFAULT 0,
-  defect_type VARCHAR(100),
-  repair_recommendation TEXT,
-  checked_by INT NOT NULL,
-  check_date DATETIME NOT NULL,
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES finished_products(id) ON DELETE CASCADE,
-  FOREIGN KEY (checked_by) REFERENCES users(id) ON DELETE RESTRICT
-);
-
--- Create index for faster retrieval by product_id
-CREATE INDEX idx_quality_checks_product ON quality_checks(product_id);
