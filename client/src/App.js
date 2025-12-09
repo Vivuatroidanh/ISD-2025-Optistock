@@ -1,4 +1,3 @@
-// Update your App.js file with these router fixes
 import React from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';

@@ -702,7 +702,7 @@ function WarehouseReportGenerator({ user }) {
       <div className="modal-overlay">
         <div className="modal-container">
           <div className="modal-header">
-            <h5>Select Display Fields</h5>
+            <h5>{t('selectDisplayFields')}</h5>
             <button 
               type="button" 
               className="close-btn"
@@ -714,7 +714,7 @@ function WarehouseReportGenerator({ user }) {
           <div className="modal-body">
             <div className="template-section">
               <div className="template-select">
-                <h6 className="mb-0">Report Templates:</h6>
+                <h6 className="mb-0">{t('reportTemplates')}:</h6>
                 <div className="template-dropdown">
                   <button 
                     className="template-dropdown-btn"
@@ -777,7 +777,7 @@ function WarehouseReportGenerator({ user }) {
             </div>
   
             <div className="recently-used">
-              <h6>Recently Used</h6>
+              <h6>{t('recentlyUsed')}</h6>
               <div className="recently-used-items">
                 <div className="field-item">
                   <input
@@ -786,7 +786,7 @@ function WarehouseReportGenerator({ user }) {
                     checked={selectedFields.includes('product_code')}
                     onChange={() => handleFieldToggle('product_code')}
                   />
-                  <label htmlFor="recent-product-code">Product Code</label>
+                  <label htmlFor="recent-product-code">{t('productCode')}'</label>
                 </div>
                 <div className="field-item">
                   <input
@@ -795,7 +795,7 @@ function WarehouseReportGenerator({ user }) {
                     checked={selectedFields.includes('quantity')}
                     onChange={() => handleFieldToggle('quantity')}
                   />
-                  <label htmlFor="recent-quantity">Quantity</label>
+                  <label htmlFor="recent-quantity">{t('quantity')}</label>
                 </div>
                 <div className="field-item">
                   <input
@@ -804,7 +804,7 @@ function WarehouseReportGenerator({ user }) {
                     checked={selectedFields.includes('status')}
                     onChange={() => handleFieldToggle('status')}
                   />
-                  <label htmlFor="recent-status">Status</label>
+                  <label htmlFor="recent-status">{t('status')}</label>
                 </div>
               </div>
             </div>
@@ -818,13 +818,13 @@ function WarehouseReportGenerator({ user }) {
                       className="toolbar-btn"
                       onClick={() => selectAllInGroup(groupIndex)}
                     >
-                      Select All
+                      {t('Select All')}
                     </button>
                     <button 
                       className="toolbar-btn"
                       onClick={() => deselectAllInGroup(groupIndex)}
                     >
-                      Deselect
+                      {t('Deselect')}
                     </button>
                   </div>
                 </div>
@@ -852,13 +852,13 @@ function WarehouseReportGenerator({ user }) {
               className="btn btn-secondary"
               onClick={() => setShowFieldSelector(false)}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button 
               className="btn btn-primary"
               onClick={handleApplyFieldSelection}
             >
-              Apply
+              {t('apply')}
             </button>
           </div>
         </div>
@@ -872,7 +872,7 @@ function WarehouseReportGenerator({ user }) {
       <div className="modal-overlay">
         <div className="modal-container preview-modal">
           <div className="modal-header">
-            <h5>Report Preview</h5>
+            <h5>{t('reportPreview')}</h5>
             <button 
               type="button" 
               className="close-btn"
@@ -898,14 +898,14 @@ function WarehouseReportGenerator({ user }) {
                     <tr>
                       <th>#</th>
                       {selectedFields.includes('id') && <th>ID</th>}
-                      {selectedFields.includes('product_code') && <th>Product Code</th>}
-                      {selectedFields.includes('product_name') && <th>Product Name</th>}
-                      {selectedFields.includes('product_type') && <th>Product Type</th>}
-                      {selectedFields.includes('quantity') && <th>Quantity</th>}
-                      {selectedFields.includes('status') && <th>Status</th>}
-                      {selectedFields.includes('defect_count') && <th>Defect Count</th>}
-                      {selectedFields.includes('completion_date') && <th>Production Date</th>}
-                      {selectedFields.includes('inspection_date') && <th>Inspection Date</th>}
+                      {selectedFields.includes('product_code') && <th>{t('productCode')}</th>}
+                      {selectedFields.includes('product_name') && <th>{t('productName')}</th>}
+                      {selectedFields.includes('product_type') && <th>{t('productType')}</th>}
+                      {selectedFields.includes('quantity') && <th>{t('quantity')}</th>}
+                      {selectedFields.includes('status') && <th>{t('status')}</th>}
+                      {selectedFields.includes('defect_count') && <th>{t('defectCount')}</th>}
+                      {selectedFields.includes('completion_date') && <th>{t('productionDate')}</th>}
+                      {selectedFields.includes('inspection_date') && <th>{t('inspectionDate')}</th>}
                     </tr>
                   )}
                 </thead>
@@ -1030,13 +1030,13 @@ function WarehouseReportGenerator({ user }) {
       <div className="container-fluid mt-4">
         <div className="report-card">
           <div className="report-header">
-            <h5>Warehouse Report Generator</h5>
+            <h5>{t('warehouseReportGenerator')}</h5>
           </div>
           <div className="report-body">
             <div className="report-title-section">
               <div className="input-group">
                 <div className="input-group-prepend">
-                  <span className="input-group-text">Report Name:</span>
+                  <span className="input-group-text">{t('reportName')}:</span>
                 </div>
                 <input
                   type="text"
@@ -1049,58 +1049,57 @@ function WarehouseReportGenerator({ user }) {
                 <div className="input-group-append d-flex">
                   <span className="input-group-text">
                     <i className="fas fa-info-circle me-1"></i>
-                    Selected fields: <span className="ms-1 badge bg-primary">{selectedFields.length}</span>
+                    {t('selectedFields')}: <span className="ms-1 badge bg-primary">{selectedFields.length}</span>
                   </span>
                 </div>
               </div>
-              <small className="text-muted d-block mt-1">Report title length: {reportTitle.length}/50</small>
+              <small className="text-muted d-block mt-1">{t('reportTitleLength')}: {reportTitle.length}/50</small>
             </div>
 
             <div className="time-period-section">
-              <h6>Time Period (Filter by Inspection Date) </h6>
-            <small className="text-muted d-block mb-2">Changes will only be applied when you click the Apply button</small>
+              <h6>{t('timePeriod')}</h6>
+            <small className="text-muted d-block mb-2">{t('notice2')}</small>
               <div className="btn-group time-period-buttons">
                 <button 
                   type="button" 
                   className={`btn ${selectedTimeframe === 'today' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                  onClick={() => handleTimeframeChange('today')}
-                >
-                  Today
+                  onClick={() => handleTimeframeChange('today')}>
+                  {t('today')}
                 </button>
                 <button 
                   type="button" 
                   className={`btn ${selectedTimeframe === 'week' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => handleTimeframeChange('week')}
                 >
-                  This Week
+                 {t('thisWeek')}
                 </button>
                 <button 
                   type="button" 
                   className={`btn ${selectedTimeframe === 'month' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => handleTimeframeChange('month')}
                 >
-                  This Month
+                  {t('thisMonth')}
                 </button>
                 <button 
                   type="button" 
                   className={`btn ${selectedTimeframe === '30days' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => handleTimeframeChange('30days')}
                 >
-                  Last 30 Days
+                  {t('last30Days')}
                 </button>
                 <button 
                   type="button" 
                   className={`btn ${selectedTimeframe === 'quarter' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => handleTimeframeChange('quarter')}
                 >
-                  This Quarter
+                  {t('thisQuarter')}
                 </button>
               </div>
 
               <div className="date-range-selector">
                 <div className="d-flex align-items-center">
                   <div className="date-range-input">
-                    <label>From:</label>
+                    <label>{t('fromDate')}:</label>
                     <input 
                       type="text" 
                       className="form-control" 
@@ -1109,7 +1108,7 @@ function WarehouseReportGenerator({ user }) {
                     />
                   </div>
                   <div className="date-range-input">
-                    <label>To:</label>
+                    <label>{t('toDate')}:</label>
                     <input 
                       type="text" 
                       className="form-control" 
@@ -1118,7 +1117,7 @@ function WarehouseReportGenerator({ user }) {
                     />
                   </div>
                   <button className="btn btn-primary date-apply-btn" onClick={handleApplyDateRange}>
-                    Apply
+                    {t('apply')}
                   </button>
                 </div>
               </div>
@@ -1131,14 +1130,14 @@ function WarehouseReportGenerator({ user }) {
                   onClick={handleExportExcel}
                   disabled={isExporting}
                 >
-                  <i className="fas fa-file-excel"></i> Export Excel
+                  <i className="fas fa-file-excel"></i> {t('exportExcel')}
                 </button>
                 <button 
                   className="export-btn pdf"
                   onClick={handleExportPDF}
                   disabled={isExporting}
                 >
-                  <i className="fas fa-file-pdf"></i> Export PDF
+                  <i className="fas fa-file-pdf"></i> {t('exportPDF')}
                 </button>
               </div>
 
@@ -1168,7 +1167,7 @@ function WarehouseReportGenerator({ user }) {
                         setShowTemplateDropdown(false);
                         }}
                     >
-                        Product Name
+                        {t('productName')}
                     </div>
                     <div 
                         className="sort-dropdown-item"
@@ -1177,13 +1176,13 @@ function WarehouseReportGenerator({ user }) {
                         setShowTemplateDropdown(false);
                         }}
                     >
-                        Inspection Date
+                        {t('inspectionDate')}
                     </div>
                     </div>
                 )}
 
                 <button className="toolbar-btn" onClick={() => setShowFieldSelector(true)}>
-                    <i className="fas fa-cog"></i> Edit Fields
+                    <i className="fas fa-cog"></i> {t('editField')}
                 </button>
               </div>
             </div>
@@ -1195,14 +1194,14 @@ function WarehouseReportGenerator({ user }) {
                     <tr>
                       <th>#</th>
                       {selectedFields.includes('id') && <th>ID</th>}
-                      {selectedFields.includes('product_code') && <th>Product Code</th>}
-                      {selectedFields.includes('product_name') && <th>Product Name</th>}
-                      {selectedFields.includes('product_type') && <th>Product Type</th>}
-                      {selectedFields.includes('quantity') && <th>Quantity</th>}
-                      {selectedFields.includes('status') && <th>Status</th>}
-                      {selectedFields.includes('defect_count') && <th>Defect Count</th>}
-                      {selectedFields.includes('completion_date') && <th>Production Date</th>}
-                      {selectedFields.includes('inspection_date') && <th>Inspection Date</th>}
+                      {selectedFields.includes('product_code') && <th>{t('productCode')}</th>}
+                      {selectedFields.includes('product_name') && <th>{t('productName')}</th>}
+                      {selectedFields.includes('product_type') && <th>{t('productType')}</th>}
+                      {selectedFields.includes('quantity') && <th>{t('quantity')}</th>}
+                      {selectedFields.includes('status') && <th>{t('status')}</th>}
+                      {selectedFields.includes('defect_count') && <th>{t('defectCount')}</th>}
+                      {selectedFields.includes('completion_date') && <th>{t('productionDate')}</th>}
+                      {selectedFields.includes('inspection_date') && <th>{t('inspectionDate')}</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -1223,7 +1222,7 @@ function WarehouseReportGenerator({ user }) {
                     ) : filteredAndSortedProducts.length === 0 ? (
                       <tr>
                         <td colSpan={selectedFields.length + 1} className="text-center py-3">
-                          No products found in the selected date range
+                          {t('errorNotFound')}
                         </td>
                       </tr>
                     ) : (
@@ -1253,7 +1252,7 @@ function WarehouseReportGenerator({ user }) {
               </div>
 
               <div className="preview-notice">
-                <i className="fas fa-info-circle"></i> This is only a preview. The full report will be displayed when generated.
+                <i className="fas fa-info-circle"></i> {t('notice')}
               </div>
             </div>
 
@@ -1262,7 +1261,7 @@ function WarehouseReportGenerator({ user }) {
                 className="btn-preview" 
                 onClick={handlePreviewReport}
               >
-                <i className="fas fa-eye"></i> Preview Report
+                <i className="fas fa-eye"></i> {t('previewReport')}
               </button>
               
               <div className="action-buttons">
@@ -1270,7 +1269,7 @@ function WarehouseReportGenerator({ user }) {
                   className="btn-cancel" 
                   onClick={handleCancel}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button 
                   className="btn-generate" 
@@ -1282,7 +1281,7 @@ function WarehouseReportGenerator({ user }) {
                       <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                       Generating...
                     </>
-                  ) : 'Generate Report'}
+                  ) : t('generateReport')}
                 </button>
               </div>
             </div>
